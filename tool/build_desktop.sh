@@ -3,8 +3,8 @@
 # dist/<platform>-<machine>/, for openDAQ Studio on the desktop.
 #
 # A module must be built against the SDK release that loads it, so the SDK's
-# core is built first, at SDK_REF: the release of the openDAQ SDK that openDAQ
-# Studio ships. The SDK is cloned into build/openDAQ from OPENDAQ_SOURCE, the
+# core is built first, at the release in OPENDAQ_VERSION, the file beside
+# this script's folder (the environment variable of that name overrides it). The SDK is cloned into build/openDAQ from OPENDAQ_SOURCE, the
 # openDAQ repository on GitHub unless set (a local clone is faster). The
 # first run takes a few minutes; later runs only rebuild what changed.
 #
@@ -18,7 +18,8 @@ set -e
 
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
 SDK_SOURCE="${OPENDAQ_SOURCE:-https://github.com/openDAQ/openDAQ.git}"
-SDK_REF="${SDK_REF:-v3.40.3}"
+OPENDAQ_VERSION="${OPENDAQ_VERSION:-$(tr -d ' \r\n' < "$HERE/OPENDAQ_VERSION")}"
+SDK_REF="${SDK_REF:-v$OPENDAQ_VERSION}"
 BUILD="$HERE/build"
 PLATFORM="$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)"
 DIST="$HERE/dist/$PLATFORM"

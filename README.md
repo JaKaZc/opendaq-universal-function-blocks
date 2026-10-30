@@ -322,7 +322,7 @@ beside it, and ships it with the app.
 | Variable | Default | Meaning |
 |---|---|---|
 | `OPENDAQ_SOURCE` | `https://github.com/openDAQ/openDAQ.git` | Where to clone the SDK from; a local clone is faster |
-| `SDK_REF` | `v3.40.3` | The SDK release |
+| `OPENDAQ_VERSION` | the file `OPENDAQ_VERSION`, `3.40.3` | The openDAQ SDK release. Change it in the file; the variable overrides it for one build |
 | `CMAKE`, `NINJA` | `cmake`, `ninja` | The tools, when they are not on the PATH |
 
 To try the module in any openDAQ application of the same release, put the
