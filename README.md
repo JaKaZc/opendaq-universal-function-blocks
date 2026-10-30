@@ -21,40 +21,60 @@ it builds the same for Android, macOS, Linux and Windows. The library is
 
 ## The openDAQ phone projects
 
-This repository is one of four that work together. Clone them side by side
-into one folder, because the build scripts find each other there.
+This repository is one of four that work together, but each one stands on
+its own: take only the parts you need, and build your own around them.
+"Needs" says what a repository cannot do without.
 
 | Repository | What it is | Needs |
 |---|---|---|
-| opendaq-android-device-module | openDAQ module, **Android only**: the phone's sensors as one device, `android://` | openDAQ SDK, Android NDK |
-| **opendaq-universal-function-blocks** (this one) | openDAQ module, UniversalFunctionBlocksModule: the six function blocks above | openDAQ SDK |
-| opendaq-device-server | Android app that serves the phone as an openDAQ device on the network | both modules, Android 8 or newer, arm64 |
-| opendaq-studio-desktop | openDAQ Studio, the desktop client for macOS and Windows | this module |
+| [opendaq-android-device-module](https://github.com/JaKaZc/opendaq-android-device-module) | openDAQ module, **Android only**: the phone's sensors and state as one device, `android://` | The openDAQ SDK and the Android NDK |
+| **opendaq-universal-function-blocks** (this one) | openDAQ module, UniversalFunctionBlocksModule: Universal renderer, Level, Spectrum, Vibration, Sound level meter and Dashboard, for any platform | The openDAQ SDK |
+| [opendaq-device-server](https://github.com/JaKaZc/opendaq-device-server) | Android app that serves the phone as an openDAQ device on the network | The Android device module. The function blocks module is optional |
+| [opendaq-studio-desktop](https://github.com/JaKaZc/opendaq-studio-desktop) | openDAQ Studio, the desktop client for macOS and Windows, for any openDAQ device | Nothing else. The function blocks module is optional |
 
 ```
  Android phone: opendaq-device-server                 Computer: opendaq-studio-desktop
  ┌──────────────────────────────────────────┐         ┌──────────────────────────────────────────┐
  │ openDAQ instance                         │         │ openDAQ Studio                           │
  │  android:// device  <- Android device    │   TCP   │  openDAQ instance, native client         │
- │                        module            │   7420  │  this module, so the phone's blocks      │
- │  function blocks    <- this module       │ ──────▶ │  can be configured, and added on         │
- │  native streaming server, mDNS           │         │  the computer too                        │
+ │                        module            │   7420  │  this module, optional, so the blocks    │
+ │  function blocks    <- this module       │ ──────▶ │  can be added on the computer too        │
+ │  native streaming server, mDNS           │         │                                          │
  └──────────────────────────────────────────┘         └──────────────────────────────────────────┘
 ```
 
-The module is used in two places:
+The module needs none of the other repositories, and it does not need a
+phone: it works in any openDAQ application, on any platform the SDK runs on.
+In these projects it is used in two places:
 
 - **On the phone**, the Device Server loads it. The phone's device adds Sound
   level, Sound spectrum and Vibration blocks to its own signals, a Dashboard,
   and one Universal renderer that a client can connect to any signal.
-- **On the computer**, openDAQ Studio loads it. An openDAQ client can show and
-  change a remote function block's properties only when it has the block's
-  module itself, so Studio needs this module to configure the phone's blocks.
-  Studio can also add the blocks to any device it runs, and it draws the
-  renderer's plot data.
+- **On the computer**, openDAQ Studio can ship it, so it can add the blocks
+  to the devices it runs itself, such as the computer's sound card. Studio
+  configures the phone's blocks with or without it, because the phone serves
+  their signals, ports and properties, and it draws the renderer's plot data
+  itself.
 
 All four repositories are built against the same openDAQ SDK release,
 **v3.40.3**. A module must be built against the release that loads it.
+
+## Use only what you need
+
+- **In any openDAQ application.** Build the module against the SDK release
+  of the application and load it from its folder (see Building). Its blocks
+  then work on any device of that instance, and every client of the instance
+  reads their outputs.
+- **Without openDAQ Studio.** The renderer's `Picture` output is plain PNG,
+  which any openDAQ client can show, and its web server serves any browser.
+  The `Plot` output is plot data, a small binary format documented under
+  [Plot data](#plot-data), so another viewer can draw it too.
+- **Only some of the blocks.** Each block is its own class, registered in
+  `src/module.cpp`. Remove the ones you do not want there, or add blocks of
+  your own the same way.
+- **On a phone without the Device Server.** The
+  [Android device module](https://github.com/JaKaZc/opendaq-android-device-module) uses the module's
+  blocks when they are loaded and works without them.
 
 ## Universal renderer
 
@@ -281,6 +301,8 @@ the PIN travels unencrypted, so use it on a network you trust.
 ### For the computer (macOS or Linux)
 
 ```bash
+git clone https://github.com/JaKaZc/opendaq-universal-function-blocks.git
+cd opendaq-universal-function-blocks
 tool/build_desktop.sh
 ```
 
@@ -292,10 +314,10 @@ The script:
    `dist/darwin-arm64/libuniversal_function_blocks_module.module.dylib`.
 
 The first run takes a few minutes. Later runs only rebuild what changed.
-openDAQ Studio's engine build (`opendaq-studio-desktop/engine/tool/build_desktop.sh`)
-runs this script when the module is not built yet, compiles the engine
-against the SDK install in `build/`, and ships the module from `dist/` in the
-app's SDK module folder.
+This script is for using the module on its own. openDAQ Studio
+([opendaq-studio-desktop](https://github.com/JaKaZc/opendaq-studio-desktop)) does not need it: its
+engine build compiles the module from these sources when this repository is
+beside it, and ships it with the app.
 
 | Variable | Default | Meaning |
 |---|---|---|
@@ -313,9 +335,12 @@ auto renderer = instance.addFunctionBlock("UniversalRenderer");
 
 ### For Android
 
-The Device Server's `tool/build_native.sh` builds the module for Android arm64
-from these sources, against its own SDK build, with the rest of its native
-code. Nothing needs to be built here first.
+The Device Server's `tool/build_native.sh`
+([opendaq-device-server](https://github.com/JaKaZc/opendaq-device-server)) builds the module for
+Android arm64 from these sources, against its own SDK build, with the rest of
+its native code. Nothing needs to be built here first. Another Android app
+builds it the same way: `CMakeLists.txt` needs only an openDAQ SDK built for
+Android, with the patch the Android device module carries.
 
 ### For Windows
 
